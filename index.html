@@ -1,0 +1,1373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEXORA — Social Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+ :root{
+  --bg:#0B141A;--panel:#111B21;--panel2:#202C33;--panel3:#0f181d;
+  --border:#222D34;--text:#E9EDEF;--muted:#8696A0;--accent:#2D88FF;
+  --accent2:#00A884;--danger:#E41E3F;--ok:#00A884;--warn:#f2b94b;
+  --incoming:#202C33;--outgoing:#005C4B;--shadow:0 18px 55px rgba(0,0,0,.28);
+  --topbar:rgba(11,20,26,.86);--input:#0d171c;--hero1:#12243a;--hero2:#101c23
+}
+body.light{
+  --bg:#F0F2F5;--panel:#FFFFFF;--panel2:#F0F2F5;--panel3:#f7f8fa;
+  --border:#E4E6EB;--text:#050505;--muted:#65676B;--accent:#1877F2;
+  --accent2:#25D366;--danger:#E41E3F;--ok:#25D366;--warn:#b78103;
+  --incoming:#F0F2F5;--outgoing:#D9FDD3;--shadow:0 14px 38px rgba(15,23,42,.10);
+  --topbar:rgba(255,255,255,.88);--input:#F0F2F5;--hero1:#eaf2ff;--hero2:#eefaf3
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.55;cursor:not-allowed}
+img,video{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+.hidden{display:none!important}
+
+.wrap{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at top,var(--hero1) 0,var(--bg) 48%)}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow)}
+.auth-card{width:min(450px,100%);padding:30px}
+.logo{font-weight:950;letter-spacing:.13em;font-size:29px}
+.logo span{color:var(--accent)}
+.auth-card h1{margin:12px 0 4px}
+.muted{color:var(--muted)}
+.small{font-size:12px;color:var(--muted)}
+.field{margin:14px 0}
+.field label{display:block;color:var(--muted);font-size:13px;margin-bottom:7px}
+.input,.textarea,.select{width:100%;background:var(--panel3);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:11px 12px;outline:none}
+.input:focus,.textarea:focus,.select:focus{border-color:var(--accent)}
+.textarea{resize:vertical;min-height:86px}
+.primary{border:0;background:var(--accent);color:#fff;border-radius:11px;padding:10px 15px;font-weight:800;box-shadow:0 7px 18px rgba(24,119,242,.16)}
+.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:11px;padding:9px 13px}
+.danger{background:var(--danger);color:#fff;border:0;border-radius:11px;padding:9px 13px}
+.icon{width:38px;height:38px;border-radius:11px;background:var(--panel2);border:1px solid var(--border);color:var(--text)}
+.link{background:none;border:0;color:var(--accent);padding:0}
+.error{color:#ff8d98;font-size:13px;margin:9px 0}
+.ok{color:var(--ok);font-size:13px;margin:9px 0}
+.toast{position:fixed;right:18px;bottom:18px;z-index:100;background:var(--panel2);color:var(--text);border:1px solid var(--border);padding:11px 14px;border-radius:12px;box-shadow:var(--shadow)}
+.popup-stack{position:fixed;right:18px;top:78px;z-index:120;display:flex;flex-direction:column;gap:10px;width:min(360px,calc(100vw - 28px));pointer-events:none}.live-popup{pointer-events:auto;background:var(--panel);border:1px solid var(--border);border-radius:15px;box-shadow:var(--shadow);padding:12px;display:flex;gap:10px;align-items:flex-start;animation:popupIn .18s ease-out}.live-popup.message{border-left:3px solid var(--accent)}.live-popup.notification{border-left:3px solid var(--ok)}.live-popup .close{margin-left:auto;background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer}.live-popup .popup-title{font-weight:800}.live-popup .popup-body{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.35}@keyframes popupIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+
+.topbar{height:64px;position:sticky;top:0;z-index:30;background:var(--topbar);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:15px;padding:0 18px}
+.topbar .search{flex:1;max-width:600px;margin:auto}
+.search input{width:100%;border-radius:999px;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:10px 15px;outline:none}
+.layout{display:grid;grid-template-columns:220px minmax(0,680px) 260px;gap:18px;max-width:1250px;margin:auto;padding:18px}
+.sidebar,.rightbar{position:sticky;top:83px;height:max-content}
+.sidebar-card{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:10px}
+.user-mini{display:flex;gap:10px;align-items:center;padding:12px;border:1px solid var(--border);background:var(--panel);border-radius:16px;margin-bottom:11px}
+.nav button{width:100%;background:transparent;border:0;color:var(--text);text-align:left;padding:11px 12px;border-radius:11px}
+.nav button:hover,.nav button.active{background:var(--panel2);color:var(--accent)}
+.avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;overflow:hidden;font-weight:900;flex:none}
+.avatar.sm{width:34px;height:34px}.avatar.lg{width:80px;height:80px;border:4px solid var(--panel)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar-wrap{position:relative;width:max-content}.online{position:absolute;right:0;bottom:1px;width:10px;height:10px;background:var(--ok);border:2px solid var(--panel);border-radius:50%}
+.content{min-width:0}
+.page-title{display:flex;align-items:center;justify-content:space-between;margin:2px 0 14px}
+.card{padding:15px;margin-bottom:13px}
+.hero{padding:20px;background:linear-gradient(135deg,var(--hero1),var(--hero2));overflow:hidden;position:relative}
+.hero:after{content:"";position:absolute;width:220px;height:220px;right:-110px;top:-110px;border-radius:50%;background:rgba(91,140,255,.12)}
+ .composer textarea{min-height:76px}
+.media-picker{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:9px}
+.media-label{display:inline-flex;align-items:center;gap:7px;background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:11px;padding:9px 12px;cursor:pointer}
+.media-label input{display:none}
+.media-preview{margin-top:10px;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel3);padding:8px}
+.media-preview img,.media-preview video{width:100%;max-height:360px;object-fit:contain;border-radius:10px}
+.post-media{margin:12px 0;border-radius:14px;overflow:hidden;border:1px solid var(--border);background:var(--panel3)}
+.post-media img,.post-media video{width:100%;max-height:520px;object-fit:contain}
+.composer-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px}
+.row{display:flex;gap:9px;align-items:center}.grow{flex:1;min-width:0}
+.feed-tabs{display:flex;gap:5px;margin-bottom:11px}
+.feed-tabs button{background:transparent;color:var(--muted);border:0;border-radius:10px;padding:8px 12px}
+.feed-tabs button.active{background:var(--panel2);color:var(--text)}
+.post-head{display:flex;align-items:center;gap:10px}
+.post-user{font-weight:800}.post-time{font-size:11px;color:var(--muted)}
+.post-body{white-space:pre-wrap;line-height:1.55;margin:12px 0}
+.actions{display:flex;gap:5px;border-top:1px solid var(--border);padding-top:9px;margin-top:11px}
+.actions button{background:transparent;color:var(--muted);border:0;padding:8px 10px;border-radius:9px}
+.actions button:hover{background:var(--panel2);color:var(--text)}
+.actions button.liked{color:#ff6675}
+.comment{padding:8px 0;border-bottom:1px solid #20262d}.comment:last-child{border-bottom:0}
+.comment-box{display:flex;gap:7px;margin-top:8px}.comment-box input{flex:1}
+.list{display:grid;gap:9px}
+.person{display:flex;gap:9px;align-items:center;padding:10px;border:1px solid var(--border);background:var(--panel2);border-radius:13px}
+.badge{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 6px;border-radius:999px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;margin-left:4px}
+.profile-card{overflow:hidden}.cover{height:150px;background:linear-gradient(135deg,#1a2740,#263a61)}
+.profile-body{padding:0 16px 16px}.profile-info{display:flex;align-items:end;gap:13px;margin-top:-35px}.profile-actions{margin-left:auto}
+.bio{line-height:1.5;color:var(--muted);margin:8px 0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:15px}.stat{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}.stat b{font-size:19px;display:block}
+.empty{text-align:center;padding:35px 15px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chat{display:grid;grid-template-columns:230px minmax(0,1fr);height:calc(100dvh - 132px);min-height:500px;max-height:calc(100dvh - 132px);overflow:hidden}
+.chat-list{border-right:1px solid var(--border);overflow:auto}.chat-item{display:flex;gap:9px;padding:11px;cursor:pointer}.chat-item:hover,.chat-item.active{background:var(--panel2)}
+.chat-main{display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;min-width:0;min-height:0;height:100%;overflow:hidden}.chat-head{padding:13px 15px;border-bottom:1px solid var(--border)}.messages{overflow:auto;min-height:0;padding:16px;display:flex;flex-direction:column;gap:8px}
+.bubble{max-width:75%;padding:9px 12px;border-radius:15px;background:var(--incoming);align-self:flex-start;white-space:pre-wrap}.bubble.mine{align-self:flex-end;background:var(--outgoing)}
+.bubble small{display:block;opacity:.65;font-size:10px;margin-top:3px}.chat-media-preview{display:block;max-width:min(320px,72vw);max-height:360px;border-radius:12px;object-fit:cover;margin-bottom:6px;background:#000}.chat-video-preview{display:block;max-width:min(360px,74vw);max-height:360px;border-radius:12px;margin-bottom:6px;background:#000}.chat-attach{flex:none;width:42px;height:42px;border:1px solid var(--border);border-radius:12px;background:var(--panel2);color:var(--text);cursor:pointer}.chat-attach:hover{border-color:var(--accent)}.chat-uploading{opacity:.7;pointer-events:none}.chat-send{display:flex;gap:7px;padding:11px;border-top:1px solid var(--border);background:var(--panel);position:relative;z-index:2;flex:none}
+.chat-meta{display:flex;align-items:center;gap:6px;margin-top:2px}
+.chat-status{font-size:11px;color:var(--muted)}
+.chat-search{max-width:190px}
+.typing{font-size:11px;color:var(--ok);padding:5px 15px 6px;min-height:24px;line-height:14px;flex:none}
+.bubble-wrap{display:flex;flex-direction:column;max-width:78%}.bubble-wrap.mine{align-self:flex-end;align-items:flex-end}
+.bubble-tools{display:none;gap:3px;margin-top:3px}.bubble-wrap:hover .bubble-tools{display:flex}
+.bubble-tools button{background:transparent;border:0;color:var(--muted);font-size:10px;padding:2px 4px}.bubble-tools button:hover{color:var(--text)}
+.chat-head-actions{display:flex;gap:6px;align-items:center}
+.chat-delete-btn{color:#ff8d98!important}
+@media(max-width:720px){.chat-search{max-width:120px}}
+
+.bottom{display:none;position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--topbar);backdrop-filter:blur(14px);border-top:1px solid var(--border);justify-content:space-around;padding:6px}.bottom button{border:0;background:transparent;color:var(--muted);padding:7px;font-size:11px}.bottom button.active{color:var(--accent)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:90;display:grid;place-items:center;padding:18px}.modal-card{width:min(580px,100%);max-height:90vh;overflow:auto;padding:18px;background:var(--panel);border:1px solid var(--border);border-radius:18px}.modal-head{display:flex;align-items:center;justify-content:space-between}
+.notice{background:var(--panel3);border:1px solid var(--border);padding:11px 12px;border-radius:12px;color:var(--text);font-size:13px}
+
+/* NEXORA Soft UI refresh */
+.topbar{box-shadow:0 1px 0 var(--border),0 8px 30px rgba(0,0,0,.05)}
+.logo{display:flex;align-items:center;gap:9px}
+.brand-mark{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 7px 18px rgba(24,119,242,.20)}
+.brand-mark svg{width:20px;height:20px;color:#fff}
+.nav button,.bottom button{transition:background .16s ease,color .16s ease,transform .16s ease}
+.nav button:hover,.bottom button:hover{transform:translateY(-1px)}
+.nav-icon,.bottom-icon{width:20px;height:20px;display:inline-grid;place-items:center;vertical-align:middle;margin-right:8px}
+.nav-icon svg,.bottom-icon svg{width:19px;height:19px}
+.icon{transition:all .16s ease}
+.icon:hover{border-color:var(--accent);transform:translateY(-1px);background:var(--panel2)}
+.card,.sidebar-card,.user-mini,.person,.chat{box-shadow:0 5px 24px rgba(15,23,42,.045)}
+body.light .card,body.light .sidebar-card,body.light .user-mini,body.light .person,body.light .chat{box-shadow:0 5px 24px rgba(15,23,42,.06)}
+.search input,.input,.textarea,.select{background:var(--input)}
+.chat-attach{background:var(--panel2)}
+.theme-pill{display:inline-flex;align-items:center;gap:8px;padding:6px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--border);font-size:11px;color:var(--muted)}
+.theme-dot{width:7px;height:7px;border-radius:50%;background:var(--accent2)}
+@media(max-width:720px){.bottom{background:var(--topbar);backdrop-filter:blur(16px);border-top:1px solid var(--border);box-shadow:0 -8px 24px rgba(0,0,0,.06)}.bottom button{color:var(--muted)}.bottom button.active{color:var(--accent)}}
+@media(max-width:1050px){.layout{grid-template-columns:190px minmax(0,1fr)}.rightbar{display:none}}
+@media(max-width:720px){.chat{height:calc(100dvh - 112px);max-height:calc(100dvh - 112px);min-height:0}.topbar{height:58px;padding:0 11px}.topbar .search{display:none}.layout{display:block;padding:11px;padding-bottom:70px}.sidebar{display:none}.bottom{display:flex}.card{padding:14px}.profile-info{align-items:center}.profile-actions{margin-left:0}.grid2{grid-template-columns:1fr}.chat{grid-template-columns:1fr;height:calc(100vh - 91px);min-height:0}.chat-list{display:none}.stats{gap:6px}}
+
+.safety-note{margin-top:8px;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:var(--panel3);font-size:11px;color:var(--muted)}
+.safety-block{padding:11px;border:1px solid rgba(228,30,63,.35);border-radius:12px;background:rgba(228,30,63,.07);color:var(--danger);font-size:13px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="modalRoot"></div>
+<div id="toastRoot"></div><div id="popupStack" class="popup-stack"></div>
+
+<!-- NEXORA V23: automatic moderation uses deployed Edge Function slug quick-endpoint. -->
+<script>
+const SUPABASE_URL="https://hkhemrcqxfqjtyztvnsn.supabase.co";
+const SUPABASE_KEY="sb_publishable_f9HL6I3QlcmnVy6Pdl62tA_jUili1MN";
+const LOGIN_FN=SUPABASE_URL+"/functions/v1/login-with-username";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+const initials=s=>(s||"?").slice(0,2).toUpperCase();
+const fmt=t=>new Date(t).toLocaleString([], {month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+const uid=()=>window.__uid;
+let currentPage="home", currentChat=null, searchTimer=null;
+
+async function session(){const {data,error}=await sb.auth.getSession();if(error)throw error;return data.session}
+async function profile(id=uid()){const {data,error}=await sb.from("profiles").select("*").eq("id",id).single();if(error)throw error;return data}
+function avatar(p,extra=""){return `<div class="avatar ${extra}">${p?.avatar_url?`<img src="${esc(p.avatar_url)}">`:esc(initials(p?.username||"NX"))}</div>`}
+function toast(m){const e=document.createElement("div");e.className="toast";e.textContent=m;$("#toastRoot").appendChild(e);setTimeout(()=>e.remove(),2400)}
+function modal(html){$("#modalRoot").innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="modal-card">${html}</div></div>`}
+function closeModal(){$("#modalRoot").innerHTML=""}
+function setPage(p){if(p!=='messages'){closeChatRealtime().catch(()=>{});}currentPage=p;renderShell()}
+function showErr(el,m){el.innerHTML=`<div class="error">${esc(m)}</div>`}
+function timeAgo(iso){const sec=Math.floor((Date.now()-new Date(iso).getTime())/1000);if(sec<60)return"now";if(sec<3600)return Math.floor(sec/60)+"m";if(sec<86400)return Math.floor(sec/3600)+"h";return Math.floor(sec/86400)+"d"}
+
+function authUI(){
+  $("#root").innerHTML=`<div class="wrap"><div class="card auth-card">
+    <div class="logo">${brandLockup()}</div>
+    <h1>Welcome to NEXORA</h1>
+    <p class="muted">Username-based sign in for the real platform.</p>
+    <div id="authBox"></div>
+  </div></div>`;
+  loginView();
+}
+function loginView(){
+  $("#authBox").innerHTML=`<form onsubmit="login(event)">
+   <div class="field"><label>Username</label><input class="input" id="loginUsername" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]+" autocomplete="username" required></div>
+   <div class="field"><label>Password</label><input class="input" id="loginPassword" type="password" autocomplete="current-password" required></div>
+   <div id="authMsg"></div><button class="primary" style="width:100%">Login</button>
+  </form><p class="muted">New here? <button class="link" onclick="registerView()">Create an account</button></p>
+  <p class="small">Email is kept for account recovery and is not used as the login name.</p>`;
+}
+function registerView(){
+  $("#authBox").innerHTML=`<form onsubmit="register(event)">
+   <div class="field"><label>Username</label><input class="input" id="regUsername" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]+" required></div>
+   <div class="field"><label>Recovery email</label><input class="input" id="regEmail" type="email" required></div>
+   <div class="field"><label>Password</label><input class="input" id="regPassword" type="password" minlength="8" required></div>
+   <div class="field"><label>Display name</label><input class="input" id="regDisplay" maxlength="40"></div>
+   <div class="field"><label>Bio</label><textarea class="textarea" id="regBio" maxlength="160"></textarea></div>
+   <div id="authMsg"></div><button class="primary" style="width:100%">Create account</button>
+  </form><p class="muted">Already registered? <button class="link" onclick="loginView()">Login</button></p>`;
+}
+async function login(e){
+  e.preventDefault();const out=$("#authMsg");
+  try{
+    const username=$("#loginUsername").value.trim(),password=$("#loginPassword").value;
+    let r;
+    try{
+      r=await fetch(LOGIN_FN,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({username,password})});
+    }catch(networkError){
+      throw new Error("Username login service is not reachable. Deploy the login-with-username Edge Function first.");
+    }
+    let b={};
+    try{ b=await r.json(); }catch(_e){}
+    if(!r.ok)throw new Error(b.error||`Login service error (${r.status})`);
+    const {error}=await sb.auth.setSession({access_token:b.access_token,refresh_token:b.refresh_token});if(error)throw error;
+    await boot();
+  }catch(err){showErr(out,err.message||"Login failed")}
+}
+async function register(e){
+  e.preventDefault();const out=$("#authMsg");
+  try{
+    const username=$("#regUsername").value.trim(),email=$("#regEmail").value.trim(),password=$("#regPassword").value;
+    const display=$("#regDisplay").value.trim()||username,bio=$("#regBio").value.trim();
+    const {data:taken,error:check}=await sb.from("profiles").select("id").ilike("username",username).maybeSingle();
+    if(check)throw check;
+    if(taken)throw new Error("That username is already taken.");
+    const {data,error}=await sb.auth.signUp({email,password,data:{username,display_name:display,bio}});if(error)throw error;
+    if(!data.user){throw new Error("Account creation failed.");}
+    if(!data.session){
+      out.innerHTML=`<div class="ok">Account created. Sign in with your username and password.</div>`;
+      setTimeout(loginView,1200);return;
+    }
+
+    // Create the public profile from the authenticated client.
+    // This version intentionally does NOT depend on an auth.users trigger.
+    const {error:profileError}=await sb.from("profiles").insert({
+      id:data.user.id,
+      username:username,
+      display_name:display,
+      bio:bio
+    });
+    if(profileError)throw profileError;
+
+    const {error:settingsError}=await sb.from("user_settings").insert({
+      user_id:data.user.id
+    });
+    if(settingsError && !/duplicate key|already exists/i.test(settingsError.message||"")){
+      throw settingsError;
+    }
+
+    await boot();
+  }catch(err){showErr(out,err.message||"Registration failed")}
+}
+async function logout(){await sb.auth.signOut();location.reload()}
+
+function iconSvg(name){
+  const icons={
+    search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+    moon:'<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5 8.5 8.5 0 1 0 20.5 14.5Z"/>',
+    sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/>',
+    discover:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/><path d="m8.5 11 1.7 1.7 3.3-3.4"/>',
+    friends:'<circle cx="9" cy="8" r="3"/><path d="M3 20c.5-3.5 2.4-5 6-5s5.5 1.5 6 5"/><path d="M15 5.5a3 3 0 0 1 0 5.8"/><path d="M17 15c2.2.5 3.4 2 4 5"/>',
+    friendfeed:'<path d="M12 21S4 16.2 4 9.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5C20 16.2 12 21 12 21Z"/>',
+    messages:'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-5 4v-4.5A2.5 2.5 0 0 1 4 13.5Z"/><path d="M8 8h8M8 11.5h5"/>',
+    notifications:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
+    profile:'<circle cx="12" cy="8" r="3.5"/><path d="M4.5 21c.8-4.1 3.1-6 7.5-6s6.7 1.9 7.5 6"/>',
+    settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V20h-2.6v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1A1.7 1.7 0 0 0 8 15a1.7 1.7 0 0 0-1.5-1H6v-2.6h.5a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V4h2.6v.5a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.5V14h-.5a1.7 1.7 0 0 0-1.5 1Z"/>',
+    logout:'<path d="M10 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H10"/><path d="M13 8l4 4-4 4M17 12H8"/>'
+  };
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.home}</svg>`;
+}
+
+function brandLockup(){return `<div class="brand-mark">${iconSvg('friendfeed')}</div><span>NEX<span>ORA</span></span>`}
+
+function setTheme(theme){
+  document.body.classList.toggle('light',theme==='light');
+  document.documentElement.dataset.theme=theme;
+}
+
+async function loadThemePreference(){
+  try{
+    const {data}=await sb.from('user_settings').select('theme').eq('user_id',uid()).maybeSingle();
+    setTheme(data?.theme==='light'?'light':'dark');
+  }catch(e){setTheme('dark')}
+}
+
+function renderShell(){
+  const navs=[["home","home","Home"],["discover","discover","Discover"],["friends","friends","Friends"],["friendfeed","friendfeed","Friends Feed"],["messages","messages","Messages"],["notifications","notifications","Notifications"],["profile","profile","Profile"],["settings","settings","Settings"]];
+  const p=currentPage;
+  $("#root").innerHTML=`<header class="topbar"><div class="logo">${brandLockup()}</div>
+    <div class="search"><input placeholder="Search users, posts and groups..." oninput="globalSearch(this.value)" onclick="if(!this.value)openSearchModal()"></div>
+    <button class="icon" onclick="openSearchModal()" title="Search" aria-label="Search">${iconSvg("search")}</button>
+    <button class="icon" id="themeToggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">${document.body.classList.contains("light")?iconSvg("sun"):iconSvg("moon")}</button>
+  </header>
+  <div class="layout">
+    <aside class="sidebar"><div class="user-mini" onclick="setPage('profile')" style="cursor:pointer"><div class="avatar sm">${window.__profile?.avatar_url?`<img src="${esc(window.__profile.avatar_url)}">`:esc(initials(window.__profile?.username))}</div><div class="grow"><b>@${esc(window.__profile?.username)}</b><div class="small">${esc(window.__profile?.display_name||"")}</div></div></div>
+      <div class="sidebar-card nav">${navs.map(n=>`<button class="${p===n[0]?"active":""}" onclick="setPage('${n[0]}')"><span class="nav-icon">${iconSvg(n[1])}</span>${n[2]}${n[0]==="friends"&&window.__pending?`<span class="badge">${window.__pending}</span>`:""}${n[0]==="messages"&&window.__unreadMessages?`<span class="badge">${window.__unreadMessages}</span>`:""}${n[0]==="notifications"&&window.__unreadNotifications?`<span class="badge">${window.__unreadNotifications}</span>`:""}</button>`).join("")}<button onclick="logout()"><span class="nav-icon">${iconSvg("logout")}</span>Logout</button></div>
+    </aside>
+    <main class="content" id="main"></main>
+    <aside class="rightbar"><div class="card"><b>People to connect</b><div class="list" id="rightPeople" style="margin-top:9px"></div></div>
+      <div class="card"><b>Your account</b><div class="small" style="margin-top:8px">@${esc(window.__profile?.username)}</div><button class="secondary" style="margin-top:10px" onclick="setPage('profile')">View profile</button></div>
+    </aside>
+  </div>
+  <nav class="bottom">${navs.slice(0,6).map(n=>`<button class="${p===n[0]?"active":""}" onclick="setPage('${n[0]}')"><span class="bottom-icon">${iconSvg(n[1])}</span><br>${n[2]}${n[0]==="messages"&&window.__unreadMessages?` <span class="badge">${window.__unreadMessages}</span>`:""}${n[0]==="notifications"&&window.__unreadNotifications?` <span class="badge">${window.__unreadNotifications}</span>`:""}</button>`).join("")}</nav>`;
+  pageRender();
+}
+async function pageRender(){
+  const m=$("#main");
+  if(currentPage==="home")await homePage(m);
+  else if(currentPage==="discover")await discoverPage(m);
+  else if(currentPage==="friends")await friendsPage(m);
+  else if(currentPage==="friendfeed")await friendsFeedPage(m);
+  else if(currentPage==="messages")await messagesPage(m);
+  else if(currentPage==="notifications")await notificationsPage(m);
+  else if(currentPage==="profile")await profilePage(m,uid());
+  else if(currentPage==="settings")await settingsPage(m);
+  loadRightPeople();
+}
+async function loadRightPeople(){
+  const box=$("#rightPeople");if(!box)return;
+  const {data}=await sb.from("profiles").select("*").neq("id",uid()).limit(5);
+  box.innerHTML=(data||[]).map(u=>personHTML(u)).join("")||'<div class="small">No suggestions.</div>';
+}
+function personHTML(u){
+  const pending=(window.__sent||[]).includes(u.id);
+  const friend=(window.__friends||[]).includes(u.id);
+  return `<div class="person">${avatar(u,"sm")}<div class="grow"><b>@${esc(u.username)}</b><div class="small">${esc(u.display_name||"")}</div></div>${friend?`<button class="secondary" onclick="setPage('messages');setTimeout(()=>openChat('${u.id}'),40)">Chat</button>`:pending?'<span class="small">Requested</span>':`<button class="secondary" onclick="sendFriend('${u.id}')">Add</button>`}</div>`;
+}
+async function loadRelationshipState(){
+  const {data:fs}=await sb.from("friendships").select("user_id,friend_id").or(`user_id.eq.${uid()},friend_id.eq.${uid()}`);
+  window.__friends=(fs||[]).map(f=>f.user_id===uid()?f.friend_id:f.user_id);
+  const {data:rs}=await sb.from("friend_requests").select("sender_id,receiver_id,status").or(`sender_id.eq.${uid()},receiver_id.eq.${uid()}`);
+  window.__sent=(rs||[]).filter(r=>r.sender_id===uid()&&r.status==="pending").map(r=>r.receiver_id);
+  window.__pending=(rs||[]).filter(r=>r.receiver_id===uid()&&r.status==="pending").length;
+}
+async function homePage(m){
+  const {data,error}=await sb.from("posts").select("*,profiles!posts_user_id_fkey(id,username,display_name,avatar_url,interests)").eq("moderation_status","approved").order("created_at",{ascending:false}).limit(100);
+  if(error){m.innerHTML=`<div class="card"><div class="error">${esc(error.message)}</div></div>`;return}
+  const myInterests=Array.isArray(window.__profile?.interests)?window.__profile.interests.map(x=>String(x).toLowerCase()):[];
+  const now=Date.now();
+  const ranked=(data||[]).map(p=>{
+    const theirs=Array.isArray(p.profiles?.interests)?p.profiles.interests.map(x=>String(x).toLowerCase()):[];
+    const overlap=theirs.filter(x=>myInterests.includes(x)).length;
+    const hours=Math.max(0,(now-new Date(p.created_at).getTime())/3600000);
+    const freshness=Math.max(0,48-hours)/48;
+    return {...p,__interestScore:overlap*10+freshness*3};
+  }).sort((a,b)=>b.__interestScore-a.__interestScore);
+  await hydratePostMedia(ranked);
+  const interestLabel=myInterests.length?`Based on your interests: ${esc(myInterests.join(', '))}`:'Add interests in your profile settings to personalize your feed.';
+  m.innerHTML=`<div class="page-title"><h2>Home</h2><button class="primary" onclick="openPostModal()">＋ Create</button></div>
+  <div class="hero card"><div class="small">WELCOME BACK</div><h2 style="margin:4px 0">NEXORA</h2><div class="muted">Connect, share and chat.</div></div>
+  <div class="feed-tabs"><button class="active">For You</button><button onclick="setPage('friendfeed')">Friends Feed</button></div><div class="small" style="margin:-3px 0 10px">${interestLabel}</div>
+  <div class="card composer"><textarea class="textarea" id="quickPost" maxlength="5000" placeholder="What's on your mind?"></textarea>
+    <div class="media-picker"><label class="media-label">📎 Add image/video <input id="quickPostFile" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" onchange="previewPostFile(this,'quickPostPreview')"></label><span id="quickPostFileName" class="small"></span></div>
+    <div id="quickPostPreview" class="media-preview hidden"></div><div class="safety-note">🛡️ NEXORA Safety: sexual/explicit content, graphic violence, crime footage, blood/gore and animal cruelty are not allowed. Media is checked before publication.</div>
+    <div class="composer-actions"><select class="select" id="quickVisibility" style="max-width:150px"><option value="public">Public</option><option value="friends">Friends</option><option value="private">Only me</option></select><button id="quickPublishBtn" class="primary" onclick="createPostQuick()">Publish</button></div></div>
+  <div id="feed">${(ranked||[]).map(postHTML).join("")||'<div class="empty">No posts yet. Be the first to share something.</div>'}</div>`;
+  await hydrateCounts((data||[]).map(x=>x.id));
+}
+function postHTML(p){
+  const can=(p.user_id===uid());
+  const media=p.__media;
+  const mediaHtml=media?`<div class="post-media">${media.media_type==='video'?`<video controls preload="metadata" src="${esc(media.url)}"></video>`:`<img loading="lazy" src="${esc(media.url)}" alt="Post image">`}</div>`:"";
+  return `<article class="card" id="post_${p.id}">
+    <div class="post-head">${avatar(p.profiles,"")}<div class="grow"><div class="post-user">@${esc(p.profiles?.username)}</div><div class="post-time">${timeAgo(p.created_at)} · ${esc(p.visibility)}</div></div>${can?`<button class="secondary" onclick="deletePost('${p.id}')">Delete</button>`:""}</div>
+    ${p.content?`<div class="post-body">${esc(p.content)}</div>`:""}
+    ${mediaHtml}
+    <div class="actions"><button onclick="toggleLike('${p.id}',this)">♥ <span data-like-count="${p.id}">…</span></button><button onclick="loadComments('${p.id}')">💬 Comments</button><button onclick="sharePost('${p.id}')">↗ Share</button><button onclick="reportTarget('post','${p.id}')">⚑ Report</button></div>
+    <div id="comments_${p.id}"></div><div class="comment-box"><input class="input" id="commentInput_${p.id}" placeholder="Write a comment..." onkeydown="if(event.key==='Enter')addComment('${p.id}')"><button class="secondary" onclick="addComment('${p.id}')">Send</button></div>
+  </article>`;
+}
+
+async function hydrateCounts(ids){
+  for(const pid of ids){
+    const {count}=await sb.from("post_likes").select("post_id",{count:"exact",head:true}).eq("post_id",pid);
+    const el=document.querySelector(`[data-like-count="${pid}"]`);if(el)el.textContent=count??0;
+  }
+}
+function mediaExt(file){
+  const map={'image/jpeg':'jpg','image/png':'png','image/webp':'webp','video/mp4':'mp4','video/webm':'webm'};
+  return map[file.type]||'bin';
+}
+function validatePostMedia(file){
+  if(!file)return null;
+  const allowed=['image/jpeg','image/png','image/webp','video/mp4','video/webm'];
+  if(!allowed.includes(file.type))throw new Error('Please choose JPG, PNG, WebP, MP4 or WebM.');
+  const max=file.type.startsWith('video/')?100*1024*1024:100*1024*1024;
+  if(file.size>max)throw new Error('Media is too large. Maximum is 100 MB.');
+  return file;
+}
+function previewPostFile(input,targetId){
+  const box=$('#'+targetId),nameId=input.id==='quickPostFile'?'quickPostFileName':'modalPostFileName';
+  const nameEl=$('#'+nameId);
+  if(!box)return;
+  box.innerHTML='';box.classList.add('hidden');
+  const file=input.files?.[0];
+  if(!file){if(nameEl)nameEl.textContent='';return;}
+  try{validatePostMedia(file)}catch(e){input.value='';if(nameEl)nameEl.textContent='';toast(e.message);return;}
+  if(nameEl)nameEl.textContent=file.name;
+  const url=URL.createObjectURL(file);
+  box.innerHTML=file.type.startsWith('video/')?`<video controls muted src="${url}"></video>`:`<img src="${url}" alt="Selected media preview">`;
+  box.classList.remove('hidden');
+}
+async function uploadPostMedia(postId,file){
+  validatePostMedia(file);
+  const ext=mediaExt(file);
+  const path=`${uid()}/${postId}/${crypto.randomUUID()}.${ext}`;
+  const {error}=await sb.storage.from('post-media').upload(path,file,{contentType:file.type,upsert:false,cacheControl:'3600'});
+  if(error)throw error;
+  const {error:dbError}=await sb.from('post_media').insert({post_id:postId,user_id:uid(),bucket:'post-media',path,media_type:file.type.startsWith('video/')?'video':'image',mime_type:file.type,size:file.size});
+  if(dbError){try{await sb.storage.from('post-media').remove([path]);}catch(e){};throw dbError;}
+}
+async function hydratePostMedia(posts){
+  const ids=(posts||[]).map(p=>p.id).filter(Boolean);
+  if(!ids.length)return posts||[];
+  const {data,error}=await sb.from('post_media').select('id,post_id,user_id,bucket,path,media_type,mime_type,size,created_at').in('post_id',ids).order('created_at',{ascending:true});
+  if(error){console.warn('Post media metadata unavailable:',error.message);return posts||[];}
+  const byPost=new Map();
+  for(const row of (data||[])){if(!byPost.has(row.post_id))byPost.set(row.post_id,row);}
+  for(const p of posts||[]){
+    const row=byPost.get(p.id);
+    if(row){
+      const {data:urlData,error:urlError}=await sb.storage.from('post-media').createSignedUrl(row.path,60*60);
+      if(!urlError&&urlData?.signedUrl)p.__media={...row,url:urlData.signedUrl};
+    }
+  }
+  return posts||[];
+}
+const NEXORA_SAFETY_RULES = [
+  /\b(?:porn|pornography|nude|nudity|sex\s*video|sexual\s*video|explicit\s*sex|rape|gore|blood\s*(?:video|photo|pic)|beheading|dismember(?:ed|ment)?|mutilat(?:ed|ion)|animal\s*(?:abuse|cruelty)|torture\s*(?:video|photo)|murder\s*(?:video|photo)|execution\s*(?:video|photo))\b/i,
+  /(?:නිරුවත්|ලිංගික\s*(?:වීඩියෝ|පින්තූර|දර්ශන)|ලිංගිකත්වය|අසභ්‍ය|ලේ\s*(?:වීඩියෝ|පින්තූර|දර්ශන)|මිනිස්\s*හිංසා|සත්ව\s*හිංසා|සත්ව\s*අපයෝජන|වධ\s*දීම|මිනීමැරුම්\s*(?:වීඩියෝ|පින්තූර))/i
+];
+function nexoraSafetyCheckText(text){
+  const value=String(text||'').replace(/\s+/g,' ').trim();
+  if(!value)return {ok:true};
+  return NEXORA_SAFETY_RULES.some(rule=>rule.test(value)) ? {ok:false} : {ok:true};
+}
+async function nexoraCreateModerationRecord(postId,mediaPath,mimeType){
+  const {error}=await sb.from('post_moderation').insert({post_id:postId,user_id:uid(),media_path:mediaPath||null,mime_type:mimeType||null,status:'pending'});
+  if(error)throw error;
+}
+async function uploadPostMediaToQuarantine(postId,file){
+  validatePostMedia(file);
+  const ext=mediaExt(file);
+  const path=`quarantine/${uid()}/${postId}/${crypto.randomUUID()}.${ext}`;
+  const {error}=await sb.storage.from('post-media-quarantine').upload(path,file,{contentType:file.type,upsert:false,cacheControl:'3600'});
+  if(error)throw error;
+  try{await nexoraCreateModerationRecord(postId,path,file.type)}catch(e){try{await sb.storage.from('post-media-quarantine').remove([path])}catch(_){};throw e}
+  return path;
+}
+
+async function nexoraExtractVideoFrames(file){
+  const MAX_FRAMES=12, MAX_DURATION=120, WIDTH=640, QUALITY=.68;
+  if(!file?.type?.startsWith('video/'))return [];
+  const url=URL.createObjectURL(file);
+  const video=document.createElement('video');
+  video.preload='metadata'; video.muted=true; video.playsInline=true; video.src=url;
+  try{
+    await new Promise((resolve,reject)=>{video.onloadedmetadata=resolve;video.onerror=()=>reject(new Error('Could not read video metadata.'));});
+    const duration=Math.min(Number(video.duration)||0,MAX_DURATION);
+    if(!duration)throw new Error('Video duration could not be read.');
+    const count=Math.min(MAX_FRAMES,Math.max(4,Math.ceil(duration/10)));
+    const canvas=document.createElement('canvas');
+    const scale=Math.min(1,WIDTH/(video.videoWidth||WIDTH));
+    canvas.width=Math.max(1,Math.round((video.videoWidth||WIDTH)*scale));
+    canvas.height=Math.max(1,Math.round((video.videoHeight||WIDTH*9/16)*scale));
+    const ctx=canvas.getContext('2d',{alpha:false});
+    const frames=[];
+    for(let i=0;i<count;i++){
+      const t=count===1?0:Math.min(duration-.05,(duration*(i+.5))/count);
+      await new Promise((resolve,reject)=>{
+        const done=()=>{video.onseeked=null;video.onerror=null;resolve()};
+        video.onseeked=done; video.onerror=()=>{video.onseeked=null;reject(new Error('Could not read a video frame.'))};
+        video.currentTime=Math.max(0,t);
+      });
+      ctx.drawImage(video,0,0,canvas.width,canvas.height);
+      frames.push(canvas.toDataURL('image/jpeg',QUALITY));
+    }
+    return frames;
+  }finally{URL.revokeObjectURL(url);video.remove();}
+}
+
+async function nexoraRunAutoModeration(postId,videoFrames=[]){
+  const {data:{session},error:sessionError}=await sb.auth.getSession();
+  if(sessionError)throw sessionError;
+  if(!session?.access_token)throw new Error('Session expired. Please log in again.');
+  const payload={post_id:postId};
+  if(videoFrames?.length)payload.video_frames=videoFrames;
+  const r=await fetch(SUPABASE_URL+'/functions/v1/quick-endpoint',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token},
+    body:JSON.stringify(payload)
+  });
+  let body={};try{body=await r.json()}catch(_){}
+  if(!r.ok)throw new Error(body?.error||`Automatic safety check failed (${r.status}).`);
+  return body;
+}
+
+async function publishPost({content,visibility,file,closeAfter=false,button=null}){
+  content=(content||'').trim();
+  if(!content&&!file){toast('Write something or add an image/video first');return false;}
+  if(!nexoraSafetyCheckText(content).ok){toast('🛡️ This post was blocked by NEXORA Safety');return false;}
+  if(file)validatePostMedia(file);
+  if(button)button.disabled=true;
+  let postId=null;
+  try{
+    const {data:post,error}=await sb.from('posts').insert({user_id:uid(),content,visibility,moderation_status:'pending'}).select('id').single();
+    if(error)throw error;
+    postId=post.id;
+    let videoFrames=[];
+    if(file){
+      try{
+        await uploadPostMediaToQuarantine(post.id,file);
+        if(file.type.startsWith('video/')){
+          toast('🎥 Preparing safety frames...');
+          videoFrames=await nexoraExtractVideoFrames(file);
+          if(!videoFrames.length)throw new Error('Could not prepare video safety frames.');
+        }
+      }catch(mediaError){try{await sb.from('posts').delete().eq('id',post.id)}catch(_){};throw mediaError}
+    }
+    const moderation=await nexoraRunAutoModeration(post.id,videoFrames);
+    if(moderation?.status==='approved'){if(closeAfter)closeModal();toast('✓ Safety check passed. Your post is published.');}
+    else if(moderation?.status==='rejected'){if(closeAfter)closeModal();toast('🛡️ NEXORA Safety rejected this post.');}
+    else{if(closeAfter)closeModal();toast(file?.type?.startsWith('video/')?'🛡️ Video safety check is reviewing sampled frames...':'🛡️ Submitted for safety review. It remains hidden until approved.');}
+    await pageRender();
+    return true;
+  }catch(err){
+    if(postId){toast(`Post saved as pending. ${err.message||'Automatic safety check failed.'}`);try{await pageRender()}catch(_){};return false;}
+    toast(err.message||'Post publishing failed');return false;
+  }finally{if(button)button.disabled=false}
+}
+
+async function createPostQuick(){
+  const file=$('#quickPostFile')?.files?.[0]||null;
+  await publishPost({content:$('#quickPost')?.value||'',visibility:$('#quickVisibility')?.value||'public',file,button:$('#quickPublishBtn')});
+}
+function openPostModal(){
+  modal(`<div class="modal-head"><h2>Create a post</h2><button class="secondary" onclick="closeModal()">×</button></div>
+    <div class="field"><label>Post</label><textarea id="modalPostText" class="textarea" maxlength="5000" placeholder="Share something with NEXORA..."></textarea></div>
+    <div class="media-picker"><label class="media-label">📎 Add image/video <input id="modalPostFile" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" onchange="previewPostFile(this,'modalPostPreview')"></label><span id="modalPostFileName" class="small"></span></div>
+    <div id="modalPostPreview" class="media-preview hidden"></div><div class="safety-note">🛡️ NEXORA Safety: sexual/explicit content, graphic violence, crime footage, blood/gore and animal cruelty are not allowed. Media is checked before publication.</div>
+    <div class="field"><label>Who can see it?</label><select id="modalVisibility" class="select"><option value="public">Everyone</option><option value="friends">Friends</option><option value="private">Only me</option></select></div>
+    <button id="modalPublishBtn" class="primary" onclick="createPostModal()">Publish</button>`);
+}
+async function createPostModal(){
+  const file=$('#modalPostFile')?.files?.[0]||null;
+  await publishPost({content:$('#modalPostText')?.value||'',visibility:$('#modalVisibility')?.value||'public',file,closeAfter:true,button:$('#modalPublishBtn')});
+}
+async function deletePost(pid){
+  if(!confirm("Delete this post?"))return;
+  const {data:media}=await sb.from('post_media').select('path').eq('post_id',pid);
+  if(media?.length){try{await sb.storage.from('post-media').remove(media.map(x=>x.path));}catch(e){}}
+  const {error}=await sb.from("posts").delete().eq("id",pid);
+  if(error)toast(error.message);else{toast("Post deleted");await pageRender()}
+}
+async function toggleLike(pid,btn){
+  const {data}=await sb.from("post_likes").select("post_id").eq("post_id",pid).eq("user_id",uid()).maybeSingle();
+  if(data){const r=await sb.from("post_likes").delete().eq("post_id",pid).eq("user_id",uid());if(r.error)toast(r.error.message)}
+  else{const r=await sb.from("post_likes").insert({post_id:pid,user_id:uid()});if(r.error)toast(r.error.message)}
+  const {count}=await sb.from("post_likes").select("post_id",{count:"exact",head:true}).eq("post_id",pid);btn.querySelector("span").textContent=count??0;btn.classList.toggle("liked",!data)
+}
+async function loadComments(pid){
+  const box=$("#comments_"+pid);if(!box)return;
+  const {data,error}=await sb.from("comments").select("id,content,user_id,created_at,profiles(id,username,avatar_url,display_name)").eq("post_id",pid).order("created_at",{ascending:true});
+  if(error){box.innerHTML=`<div class="error">${esc(error.message)}</div>`;return}
+  box.innerHTML=(data||[]).map(c=>`<div class="comment"><b>@${esc(c.profiles?.username)}</b> ${esc(c.content)} <span class="small">${timeAgo(c.created_at)}</span>${c.user_id===uid()?` <button class="link" onclick="deleteComment('${c.id}','${pid}')">delete</button>`:""}</div>`).join("")||'<div class="small" style="padding:9px 0">No comments yet.</div>';
+}
+async function addComment(pid){
+  const input=$("#commentInput_"+pid),text=input?.value.trim();if(!text)return;
+  const {error}=await sb.from("comments").insert({post_id:pid,user_id:uid(),content:text});if(error){toast(error.message);return}input.value="";await loadComments(pid)
+}
+async function deleteComment(cid,pid){const {error}=await sb.from("comments").delete().eq("id",cid);if(error)toast(error.message);else await loadComments(pid)}
+async function sharePost(pid){const link=location.href.split("#")[0]+"#post_"+pid;try{await navigator.clipboard.writeText(link)}catch{}toast("Post link copied")}
+async function discoverPage(m){
+  const {data}=await sb.from("profiles").select("*").neq("id",uid()).order("created_at",{ascending:false}).limit(30);
+  m.innerHTML=`<div class="page-title"><h2>Discover</h2></div><div class="card"><input id="discoverSearch" class="input" placeholder="Search usernames..." oninput="searchDiscover(this.value)"></div><div id="discoverResults" class="list">${(data||[]).map(personHTML).join("")}</div>`;
+}
+async function searchDiscover(q){
+  clearTimeout(searchTimer);searchTimer=setTimeout(async()=>{
+    q=q.trim();let query=sb.from("profiles").select("*").neq("id",uid()).limit(30);
+    if(q)query=query.ilike("username",`%${q}%`);
+    const {data}=await query;$("#discoverResults").innerHTML=(data||[]).map(personHTML).join("")||'<div class="empty">No users found.</div>';
+  },200)
+}
+async function sendFriend(to){
+  const {data:blocked}=await sb.from("blocks").select("blocker_id").or(`and(blocker_id.eq.${uid()},blocked_id.eq.${to}),and(blocker_id.eq.${to},blocked_id.eq.${uid()})`).limit(1);
+  if(blocked?.length){toast("This connection is unavailable.");return}
+  const {error}=await sb.from("friend_requests").insert({sender_id:uid(),receiver_id:to,status:"pending"});if(error)toast(error.message);else{toast("Friend request sent");await refreshAfterRelation()}
+}
+async function acceptFriend(id,sender){
+  const a=await sb.from("friend_requests").update({status:"accepted",updated_at:new Date().toISOString()}).eq("id",id);
+  if(a.error){toast(a.error.message);return}
+  toast("Friend added");await refreshAfterRelation();await friendsPage($("#main"))
+}
+async function rejectFriend(id){const {error}=await sb.from("friend_requests").update({status:"rejected",updated_at:new Date().toISOString()}).eq("id",id);if(error)toast(error.message);else{toast("Request rejected");await refreshAfterRelation();await pageRender()}}
+async function removeFriend(other){const a=await sb.from("friendships").delete().eq("user_id",uid()).eq("friend_id",other);if(a.error)toast(a.error.message);else{toast("Friend removed");await refreshAfterRelation();await pageRender()}}
+async function blockUser(other){
+  const {error}=await sb.from("blocks").insert({blocker_id:uid(),blocked_id:other});if(error)toast(error.message);else{toast("User blocked");await pageRender()}
+}
+async function friendsPage(m){
+  await loadRelationshipState();
+  const {data:req}=await sb.from("friend_requests").select("id,sender_id,receiver_id,status,created_at").eq("receiver_id",uid()).eq("status","pending").order("created_at",{ascending:false});
+  await buildProfileLookup((req||[]).map(x=>x.sender_id));
+  const ids=window.__friends||[];
+  let friendProfiles=[];
+  if(ids.length){const r=await sb.from("profiles").select("*").in("id",ids);friendProfiles=r.data||[]}
+  m.innerHTML=`<div class="page-title"><h2>Friends</h2><button class="secondary" onclick="setPage('discover')">Find people</button></div>
+  <div class="card"><h3>Requests</h3>${(req||[]).map(r=>`<div class="person">${avatar(window.__profileLookup?.[r.sender_id],"sm")}<div class="grow"><b>Friend request</b><div class="small">${esc(window.__profileLookup?.[r.sender_id]?.username||r.sender_id)}</div></div><button class="primary" onclick="acceptFriend('${r.id}','${r.sender_id}')">Accept</button><button class="secondary" onclick="rejectFriend('${r.id}')">Reject</button></div>`).join("")||'<div class="empty">No pending requests.</div>'}</div>
+  <div class="card"><h3>Your friends</h3><div class="list">${friendProfiles.map(u=>`<div class="person">${avatar(u,"sm")}<div class="grow"><b>@${esc(u.username)}</b><div class="small">${esc(u.display_name||"")}</div></div><button class="secondary" onclick="setPage('messages');setTimeout(()=>openChat('${u.id}'),50)">Message</button><button class="secondary" onclick="removeFriend('${u.id}')">Remove</button></div>`).join("")||'<div class="empty">No friends yet.</div>'}</div></div>`;
+}
+async function buildProfileLookup(ids){
+  const uniq=[...new Set((ids||[]).filter(Boolean))];if(!uniq.length){window.__profileLookup={};return}
+  const {data}=await sb.from("profiles").select("*").in("id",uniq);window.__profileLookup=Object.fromEntries((data||[]).map(x=>[x.id,x]))
+}
+async function refreshAfterRelation(){await loadRelationshipState();renderShell()}
+
+async function friendsFeedPage(m){
+  const friendIds=window.__friends||[];
+  if(!friendIds.length){m.innerHTML=`<div class="page-title"><h2>Friends Feed</h2></div><div class="card empty">Add friends to see their posts here.</div>`;return;}
+  const {data,error}=await sb.from("posts").select("*,profiles!posts_user_id_fkey(id,username,display_name,avatar_url,interests)").in("user_id",friendIds).eq("moderation_status","approved").order("created_at",{ascending:false}).limit(100);
+  if(error){m.innerHTML=`<div class="card"><div class="error">${esc(error.message)}</div></div>`;return;}
+  await hydratePostMedia(data||[]);
+  m.innerHTML=`<div class="page-title"><h2>Friends Feed</h2><button class="secondary" onclick="setPage('home')">For You</button></div><div class="card notice">Posts from people you are friends with.</div>${(data||[]).map(postHTML).join("")||'<div class="empty">Your friends have not posted yet.</div>'}`;
+  await hydrateCounts((data||[]).map(x=>x.id));
+}
+
+async function profilePage(m,target){
+  const p=await profile(target);
+  const {count:postCount}=await sb.from("posts").select("id",{count:"exact",head:true}).eq("user_id",target);
+  const {count:friendCount}=await sb.from("friendships").select("user_id",{count:"exact",head:true}).eq("user_id",target);
+  const {data:posts}=await sb.from("posts").select("*,profiles!posts_user_id_fkey(id,username,display_name,avatar_url)").eq("user_id",target).order("created_at",{ascending:false}).limit(30);
+  await hydratePostMedia(posts||[]);
+  const me=target===uid();
+  const isFriend=(window.__friends||[]).includes(target);
+  m.innerHTML=`<div class="card profile-card"><div class="cover" style="${p.cover_url?`background-image:url('${esc(p.cover_url)}');background-size:cover;background-position:center`:''}"></div><div class="profile-body"><div class="profile-info">${avatar(p,"lg")}<div class="grow"><h2 style="margin:0">${esc(p.display_name||p.username)}</h2><div class="muted">@${esc(p.username)}</div></div><div class="profile-actions">${me?`<button class="secondary" onclick="editProfile()">Edit</button>`:isFriend?`<button class="secondary" onclick="setPage('messages');setTimeout(()=>openChat('${target}'),60)">Message</button>`:`<button class="primary" onclick="sendFriend('${target}')">Add friend</button>`}</div></div><div class="bio">${esc(p.bio||"No bio yet.")}</div><div class="stats"><div class="stat"><b>${postCount??0}</b><span class="small">Posts</span></div><div class="stat"><b>${friendCount??0}</b><span class="small">Friends</span></div><div class="stat"><b>${isFriend?"Friend":"Public"}</b><span class="small">Status</span></div></div>${!me?`<div style="margin-top:10px"><button class="danger" onclick="blockUser('${target}')">Block user</button> <button class="secondary" onclick="reportTarget('user','${target}')">Report</button></div>`:""}</div></div>
+  <h3>Posts</h3>${(posts||[]).map(postHTML).join("")||'<div class="empty">No posts.</div>'}`;
+}
+function mediaPath(bucket,userId,kind,file){
+  const extMap={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
+  const ext=extMap[file?.type]||'bin';
+  return `${userId}/${kind}-${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+}
+function setProfileSaveStatus(message,type='small'){
+  const el=document.getElementById('profileSaveMsg');
+  if(!el)return;
+  el.className=type==='error'?'error':type==='ok'?'ok':'small';
+  el.textContent=message;
+}
+function previewProfileFile(input,previewId){
+  const file=input?.files?.[0];
+  const preview=document.getElementById(previewId);
+  if(!preview)return;
+  if(!file){preview.innerHTML='';return;}
+  const allowed=['image/jpeg','image/png','image/webp'];
+  if(!allowed.includes(file.type)){
+    preview.innerHTML='';
+    setProfileSaveStatus('Please choose a JPG, PNG or WebP image.','error');
+    return;
+  }
+  const max=input.id==='editAvatarFile'?5*1024*1024:10*1024*1024;
+  if(file.size>max){
+    preview.innerHTML='';
+    setProfileSaveStatus(`Image is too large. Maximum is ${input.id==='editAvatarFile'?5:10} MB.`,'error');
+    return;
+  }
+  const url=URL.createObjectURL(file);
+  preview.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover">`;
+}
+async function uploadProfileMedia(file,bucket,kind){
+  if(!file) return null;
+  const allowed=['image/jpeg','image/png','image/webp'];
+  if(!allowed.includes(file.type)) throw new Error('Please choose a JPG, PNG or WebP image.');
+  const max=bucket==='avatars'?5*1024*1024:10*1024*1024;
+  if(file.size>max) throw new Error(`Image is too large. Maximum is ${bucket==='avatars'?5:10} MB.`);
+  setProfileSaveStatus(`Uploading ${kind} image…`);
+  const path=mediaPath(bucket,uid(),kind,file);
+  const {error}=await sb.storage.from(bucket).upload(path,file,{contentType:file.type,upsert:false,cacheControl:'3600'});
+  if(error) throw new Error(`Storage upload failed: ${error.message}`);
+  setProfileSaveStatus(`${kind==='avatar'?'Profile':'Cover'} image uploaded. Saving profile…`);
+  const {data:urlData,error:urlError}=await sb.storage.from(bucket).createSignedUrl(path,60*60*24*30);
+  if(urlError) throw new Error(`Signed URL failed: ${urlError.message}`);
+  if(!urlData?.signedUrl) throw new Error('Supabase did not return an image URL.');
+  return {path,url:urlData.signedUrl};
+}
+function editProfile(){
+  const p=window.__profile||{};
+  modal(`<div class="modal-head"><h2>Edit profile</h2><button class="secondary" type="button" onclick="closeModal()">×</button></div>
+  <div class="field"><label>Display name</label><input id="editDisplay" class="input" maxlength="40" value="${esc(p.display_name||'')}"></div>
+  <div class="field"><label>Bio</label><textarea id="editBio" class="textarea" maxlength="160">${esc(p.bio||'')}</textarea></div>
+  <div class="field"><label>Interests</label><input id="editInterests" class="input" maxlength="300" value="${esc(Array.isArray(p.interests)?p.interests.join(', '):'')}" placeholder="technology, gaming, history, music"></div>
+  <div class="small">Add a few interests separated by commas. NEXORA uses them to personalize your For You feed.</div>
+  <div class="field"><label>Profile image</label><input id="editAvatarFile" class="input" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewProfileFile(this,'avatarPreview')"></div>
+  <div id="avatarPreview" style="width:82px;height:82px;border-radius:50%;overflow:hidden;background:var(--panel2);border:1px solid var(--border);margin:8px 0"></div>
+  <div class="field"><label>Cover image</label><input id="editCoverFile" class="input" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewProfileFile(this,'coverPreview')"></div>
+  <div id="coverPreview" style="width:100%;height:110px;border-radius:12px;overflow:hidden;background:var(--panel2);border:1px solid var(--border);margin:8px 0"></div>
+  <div class="small">JPG, PNG or WebP. Avatar max 5 MB; cover max 10 MB.</div>
+  <div id="profileSaveMsg" style="margin-top:10px"></div>
+  <button id="profileSaveBtn" class="primary" type="button" style="margin-top:12px" onclick="saveProfile()">Save</button>`);
+}
+async function saveProfile(){
+  const msg=document.getElementById('profileSaveMsg');
+  const btn=document.getElementById('profileSaveBtn');
+  if(!msg||!btn){toast('Profile editor is not ready. Please reopen it.');return;}
+  try{
+    btn.disabled=true;
+    btn.textContent='Saving…';
+    setProfileSaveStatus('Preparing profile update…');
+    const display=document.getElementById('editDisplay')?.value.trim()||'';
+    const bio=document.getElementById('editBio')?.value.trim()||'';
+    const interests=String(document.getElementById('editInterests')?.value||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean).slice(0,20);
+    const avatarFile=document.getElementById('editAvatarFile')?.files?.[0]||null;
+    const coverFile=document.getElementById('editCoverFile')?.files?.[0]||null;
+    const update={display_name:display,bio:bio,interests,updated_at:new Date().toISOString()};
+    if(avatarFile){
+      const r=await uploadProfileMedia(avatarFile,'avatars','avatar');
+      update.avatar_url=r.url;
+    }
+    if(coverFile){
+      const r=await uploadProfileMedia(coverFile,'covers','cover');
+      update.cover_url=r.url;
+    }
+    setProfileSaveStatus('Saving profile to database…');
+    const {error}=await sb.from('profiles').update(update).eq('id',uid());
+    if(error) throw new Error(`Profile database update failed: ${error.message}`);
+    window.__profile={...(window.__profile||{}),...update};
+    setProfileSaveStatus('Profile saved successfully.','ok');
+    toast('Profile updated successfully');
+    setTimeout(async()=>{closeModal();await boot();},500);
+  }catch(err){
+    console.error('NEXORA profile save error:',err);
+    setProfileSaveStatus(err?.message||'Profile update failed.','error');
+    toast(err?.message||'Profile update failed');
+    btn.disabled=false;
+    btn.textContent='Save';
+  }
+}
+async function notificationsPage(m){
+  const [{data:req,error:reqErr},{data:notifs,error:notifErr}]=await Promise.all([
+    sb.from("friend_requests").select("id,sender_id,created_at,status").eq("receiver_id",uid()).eq("status","pending").order("created_at",{ascending:false}),
+    sb.from("notifications").select("id,user_id,actor_id,type,reference_id,message,created_at,read_at").eq("user_id",uid()).neq("type","new_message").order("created_at",{ascending:false}).limit(50)
+  ]);
+  if(reqErr||notifErr){
+    const e=reqErr||notifErr;
+    m.innerHTML=`<div class="card"><div class="error">Notification load failed: ${esc(e?.message||"Unknown error")}</div><div class="small" style="margin-top:8px">Make sure the V19 notification SQL has been run in Supabase.</div></div>`;
+    return;
+  }
+  const actorIds=[...(req||[]).map(x=>x.sender_id),...(notifs||[]).map(x=>x.actor_id)].filter(Boolean);
+  await buildProfileLookup([...new Set(actorIds)]);
+  const iconForType=t=>({post_like:"♥",post_comment:"💬",new_post:"📝",friend_request:"♙",friend_request_accepted:"✓"}[t]||"●");
+  const notificationRows=(notifs||[]).map(n=>{
+    const actor=window.__profileLookup[n.actor_id];
+    return `<div class="person"><div class="avatar sm">${iconForType(n.type)}</div><div class="grow"><b>@${esc(actor?.username||"user")}</b><div>${esc(n.message||"Notification")}</div><div class="small">${timeAgo(n.created_at)} · ${esc(n.type||"activity")}</div></div></div>`;
+  }).join("");
+  m.innerHTML=`<div class="page-title"><h2>Notifications</h2></div>
+    <div class="card"><h3>Activity</h3>${notificationRows||'<div class="empty">No notifications yet.</div>'}</div>
+    <div class="card"><h3>Friend requests</h3>${(req||[]).map(r=>`<div class="person">${avatar(window.__profileLookup[r.sender_id],"sm")}<div class="grow"><b>@${esc(window.__profileLookup[r.sender_id]?.username||"user")}</b><div class="small">sent you a friend request · ${timeAgo(r.created_at)}</div></div><button class="primary" onclick="acceptFriend('${r.id}','${r.sender_id}')">Accept</button><button class="secondary" onclick="rejectFriend('${r.id}')">Reject</button></div>`).join("")||'<div class="empty">No pending friend requests.</div>'}</div>`;
+  await markNotificationsRead();
+}
+
+let chatRealtimeChannel = null;
+let chatTypingTimer = null;
+let chatTypingState = false;
+let activeConversationId = null;
+let activeOtherId = null;
+let activeMessages = [];
+
+async function closeChatRealtime(){
+  clearTimeout(chatTypingTimer);
+  chatTypingTimer=null;
+  chatTypingState=false;
+  if(chatRealtimeChannel){
+    try{ await sb.removeChannel(chatRealtimeChannel); }catch(e){}
+    chatRealtimeChannel=null;
+  }
+}
+
+async function messagesPage(m){
+  await closeChatRealtime();
+  activeConversationId=null;
+  activeOtherId=null;
+  const {data:members,error}=await sb.from("conversation_members").select("conversation_id,user_id").eq("user_id",uid());
+  if(error){m.innerHTML=`<div class="card"><div class="error">${esc(error.message)}</div></div>`;return}
+  const convs=[...new Set((members||[]).map(x=>x.conversation_id))];
+  let otherIds=[];
+  if(convs.length){
+    const {data:cm}=await sb.from("conversation_members").select("conversation_id,user_id").in("conversation_id",convs).neq("user_id",uid());
+    otherIds=[...new Set((cm||[]).map(x=>x.user_id))];
+  }
+  const {data:others}=otherIds.length?await sb.from("profiles").select("*").in("id",otherIds):{data:[]};
+  const newBtn=`<button class="primary" onclick="openNewChat()">＋ New message</button>`;
+  m.innerHTML=`<div class="page-title"><h2>Messages</h2>${newBtn}</div>
+    <div class="card chat">
+      <div class="chat-list"><div style="padding:13px;display:flex;justify-content:space-between;align-items:center"><b>Chats</b><button class="icon" onclick="openNewChat()">＋</button></div>
+      ${(others||[]).map(u=>`<div class="chat-item" id="chatItem_${u.id}" onclick="openChat('${u.id}')">${avatar(u,"sm")}<div class="grow"><b>@${esc(u.username)}</b><div class="small">${esc(u.display_name||"Private chat")}</div></div></div>`).join("")||'<div class="empty">No chats yet.<br>Start a new message.</div>'}</div>
+      <div class="chat-main" id="chatMain"><div class="empty">Select a conversation.</div></div>
+    </div>`;
+}
+
+async function openNewChat(){
+  modal(`<div class="modal-head"><h2>New message</h2><button class="secondary" onclick="closeModal()">×</button></div>
+    <p class="small">Search by username. Only users you are allowed to message can receive a chat.</p>
+    <input class="input" id="newChatSearch" autofocus placeholder="Search username..." oninput="searchNewChat(this.value)">
+    <div id="newChatResults" class="list" style="margin-top:12px"><div class="empty">Type a username.</div></div>`);
+}
+
+async function searchNewChat(q){
+  q=q.trim();
+  if(!q){$("#newChatResults").innerHTML='<div class="empty">Type a username.</div>';return}
+  const {data}=await sb.from("profiles").select("*").ilike("username",`%${q}%`).neq("id",uid()).limit(10);
+  $("#newChatResults").innerHTML=(data||[]).map(u=>`<div class="person">${avatar(u,"sm")}<div class="grow"><b>@${esc(u.username)}</b><div class="small">${esc(u.display_name||"")}</div></div><button class="secondary" onclick="closeModal();setPage('messages');setTimeout(()=>openChat('${u.id}'),70)">Message</button></div>`).join("")||'<div class="empty">No users found.</div>';
+}
+
+async function findSharedConversation(otherId){
+  const {data:mine}=await sb.from("conversation_members").select("conversation_id").eq("user_id",uid());
+  const ids=[...(mine||[])].map(x=>x.conversation_id);
+  if(!ids.length)return null;
+  const {data:their}=await sb.from("conversation_members").select("conversation_id").eq("user_id",otherId).in("conversation_id",ids);
+  return their?.[0]?.conversation_id||null;
+}
+
+async function openChat(otherId){
+  activeOtherId=otherId;
+  const otherResult=await sb.from("profiles").select("*").eq("id",otherId).single();
+  if(otherResult.error){toast(otherResult.error.message);return}
+  const other=otherResult.data;
+
+  let shared=await findSharedConversation(otherId);
+  if(!shared){
+    const c=await sb.rpc("create_private_conversation",{other_user_id:otherId});
+    if(c.error){toast(c.error.message);return}
+    shared=c.data;
+  }
+  activeConversationId=shared;
+
+  const {data:messages,error}=await sb.from("messages").select("*").eq("conversation_id",shared).order("created_at",{ascending:true});
+  if(error){toast(error.message);return}
+  activeMessages=messages||[];
+  await hydrateChatMedia(activeMessages);
+
+  const box=$("#chatMain");if(!box)return;
+  box.innerHTML=`<div class="chat-head">
+      <div class="row">
+        ${avatar(other,"sm")}
+        <div class="grow"><b>@${esc(other.username)}</b><div class="chat-meta"><span id="presenceStatus" class="chat-status">Offline</span><span class="small">· Private chat</span></div></div>
+        <input id="chatSearch" class="input chat-search" placeholder="Search chat..." oninput="filterChat(this.value)">
+        <button class="secondary chat-delete-btn" title="Delete entire chat" onclick="deleteEntireChat()">Delete chat</button>
+      </div>
+    </div>
+    <div class="messages" id="messageList">${renderMessages(activeMessages,otherId)||'<div class="empty">No messages yet.</div>'}</div>
+    <div id="typingLine" class="typing hidden">typing…</div>
+    <div class="chat-send" id="chatSendBar">
+      <input id="chatMediaPicker" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" hidden onchange="handleChatMediaPick(this)">
+      <button class="chat-attach" title="Photo or video" aria-label="Photo or video" onclick="document.getElementById('chatMediaPicker')?.click()">📎</button>
+      <button class="icon" onclick="insertChatEmoji()">😊</button>
+      <input id="msgInput" class="input" placeholder="Write a message..." oninput="sendTyping(this.value)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}" autocomplete="off">
+      <button class="primary" onclick="sendChat()">Send</button>
+    </div>`;
+  const initialList=$("#messageList"); if(initialList) initialList.scrollTop=initialList.scrollHeight;
+
+  await markMessagesRead(activeMessages);
+  await refreshUnreadCounts();
+  await subscribeToChatRealtime(shared,otherId);
+}
+
+async function hydrateChatMedia(messages){
+  const list=Array.isArray(messages)?messages:[];
+  await Promise.all(list.map(async m=>{
+    m.__mediaUrl=null;
+    if(!m.media_path || !m.media_bucket)return;
+    try{
+      const {data,error}=await sb.storage.from(m.media_bucket).createSignedUrl(m.media_path,3600);
+      if(!error && data?.signedUrl)m.__mediaUrl=data.signedUrl;
+    }catch(e){console.warn("Chat media URL failed",e)}
+  }));
+  return list;
+}
+
+function renderMessages(list,otherId){
+  return list.map(m=>bubbleHTML(m,otherId)).join("");
+}
+function bubbleHTML(m,otherId){
+  const mine=m.sender_id===uid();
+  const read=mine && activeReadIds?.has?.(m.id);
+  const edited=m.edited_at?" · edited":"";
+  let body=esc(m.encrypted_content||"");
+  if(m.message_type==="image" && m.__mediaUrl){
+    body=`<img class="chat-media-preview" src="${esc(m.__mediaUrl)}" alt="Shared photo" loading="lazy" onclick="window.open(${JSON.stringify(m.__mediaUrl)},'_blank','noopener,noreferrer')">`+(body?`<div>${esc(m.encrypted_content||"")}</div>`:"");
+  }else if(m.message_type==="video" && m.__mediaUrl){
+    body=`<video class="chat-video-preview" controls preload="metadata"><source src="${esc(m.__mediaUrl)}" type="${esc(m.media_mime_type||"video/mp4")}"></video>`+(body?`<div>${esc(m.encrypted_content||"")}</div>`:"");
+  }else if((m.message_type==="image"||m.message_type==="video") && !m.__mediaUrl){
+    body=`<div class="small" style="opacity:.7">Media unavailable</div>`+(body?`<div>${esc(m.encrypted_content||"")}</div>`:"");
+  }
+  return `<div class="bubble-wrap ${mine?"mine":""}" id="msg_${m.id}">
+    <div class="bubble ${mine?"mine":""}">${body}<small>${fmt(m.created_at)}${mine?` · ${read?"Read":"Sent"}`:""}${edited}</small></div>
+    ${mine?`<div class="bubble-tools">${m.message_type==="text"?`<button onclick="editMessage('${m.id}')">Edit</button>`:""}<button onclick="deleteMessage('${m.id}')">Delete for everyone</button></div>`:""}
+  </div>`;
+}
+
+const CHAT_MEDIA_MAX=50*1024*1024;
+const CHAT_MEDIA_TYPES={
+  "image/jpeg":"jpg",
+  "image/png":"png",
+  "image/webp":"webp",
+  "video/mp4":"mp4",
+  "video/webm":"webm"
+};
+function validateChatMedia(file){
+  if(!file)return;
+  if(!Object.prototype.hasOwnProperty.call(CHAT_MEDIA_TYPES,file.type))throw new Error("Please choose JPG, PNG, WebP, MP4 or WebM.");
+  if(file.size<=0 || file.size>CHAT_MEDIA_MAX)throw new Error("Chat media must be between 1 byte and 50 MB.");
+}
+async function handleChatMediaPick(input){
+  const file=input?.files?.[0];
+  if(!file)return;
+  input.value="";
+  try{
+    validateChatMedia(file);
+    await sendChatMedia(file);
+  }catch(err){toast(err?.message||"Could not send media.")}
+}
+async function sendChatMedia(file){
+  if(!activeConversationId){throw new Error("Open a private chat first.");}
+  const sendBar=$("#chatSendBar");
+  const input=$("#msgInput");
+  const caption=String(input?.value||"").trim();
+  validateChatMedia(file);
+  sendBar?.classList.add("chat-uploading");
+  const ext=CHAT_MEDIA_TYPES[file.type];
+  const path=`${activeConversationId}/${uid()}/${crypto.randomUUID()}.${ext}`;
+  try{
+    const {error:uploadError}=await sb.storage.from("chat-media").upload(path,file,{contentType:file.type,upsert:false,cacheControl:"3600"});
+    if(uploadError)throw uploadError;
+    const type=file.type.startsWith("video/")?"video":"image";
+    const {data,error:dbError}=await sb.from("messages").insert({
+      conversation_id:activeConversationId,
+      sender_id:uid(),
+      encrypted_content:caption,
+      message_type:type,
+      media_bucket:"chat-media",
+      media_path:path,
+      media_mime_type:file.type,
+      media_size:file.size,
+      media_url:null
+    }).select("*").single();
+    if(dbError){try{await sb.storage.from("chat-media").remove([path])}catch(_){};throw dbError}
+    await hydrateChatMedia([data]);
+    if(input){input.value="";await sendTyping("")}
+    activeMessages.push(data);
+    const list=$("#messageList");
+    if(list){list.insertAdjacentHTML("beforeend",bubbleHTML(data,activeOtherId));list.scrollTop=list.scrollHeight}
+  }finally{
+    sendBar?.classList.remove("chat-uploading");
+  }
+}
+
+let activeReadIds = new Set();
+
+async function refreshReadState(){
+  activeReadIds=new Set();
+  const ids=activeMessages.map(m=>m.id).filter(Boolean);
+  if(!ids.length||!activeOtherId)return;
+  const {data}=await sb.from("message_reads").select("message_id").in("message_id",ids).eq("user_id",activeOtherId);
+  (data||[]).forEach(x=>activeReadIds.add(x.message_id));
+}
+
+async function markMessagesRead(messages){
+  const incoming=messages.filter(m=>m.sender_id!==uid());
+  if(!incoming.length)return;
+  const ids=incoming.map(m=>m.id);
+  const {data:existing}=await sb.from("message_reads").select("message_id").in("message_id",ids).eq("user_id",uid());
+  const done=new Set((existing||[]).map(x=>x.message_id));
+  const missing=ids.filter(id=>!done.has(id));
+  if(missing.length){
+    const rows=missing.map(message_id=>({message_id,user_id:uid()}));
+    const {error}=await sb.from("message_reads").insert(rows);
+    if(error && !/duplicate key|already exists/i.test(error.message||""))console.warn(error.message);
+    await refreshUnreadCounts();
+    if(chatRealtimeChannel){
+      try{await chatRealtimeChannel.send({type:"broadcast",event:"read",payload:{user_id:uid(),message_ids:missing}})}catch(e){}
+    }
+  }
+}
+
+function filterChat(q){
+  q=q.trim().toLowerCase();
+  document.querySelectorAll("#messageList .bubble-wrap").forEach(w=>{
+    const text=w.textContent.toLowerCase();
+    w.style.display=!q||text.includes(q)?"":"none";
+  });
+}
+function insertChatEmoji(){
+  const i=$("#msgInput");if(!i)return;i.value+=(i.value?" ":"")+"😊";i.focus();sendTyping(i.value)
+}
+async function sendTyping(text){
+  const ch=chatRealtimeChannel;
+  if(!ch || !activeConversationId)return;
+  const typing=!!String(text||"").trim();
+  chatTypingState=typing;
+  try{
+    await ch.send({
+      type:"broadcast",
+      event:"typing",
+      payload:{conversation_id:activeConversationId,user_id:uid(),typing}
+    });
+  }catch(e){ console.warn("Typing broadcast failed",e); }
+  clearTimeout(chatTypingTimer);
+  if(typing){
+    chatTypingTimer=setTimeout(()=>sendTyping(""),1200);
+  }
+}
+async function subscribeToChatRealtime(conversationId,otherId){
+  await closeChatRealtime();
+  chatRealtimeChannel=sb.channel("nexora-chat-"+conversationId,{
+    config:{
+      broadcast:{ack:true,self:false},
+      presence:{key:uid()}
+    }
+  });
+
+  chatRealtimeChannel
+    .on("postgres_changes",{
+      event:"INSERT",schema:"public",table:"messages",
+      filter:`conversation_id=eq.${conversationId}`
+    },async payload=>{
+      const m=payload.new;
+      if(activeConversationId!==conversationId)return;
+      if(!activeMessages.some(x=>x.id===m.id)){
+        await hydrateChatMedia([m]);
+        activeMessages.push(m);
+        await refreshReadState();
+        const list=$("#messageList");if(list){list.insertAdjacentHTML("beforeend",bubbleHTML(m,otherId));list.scrollTop=list.scrollHeight}
+      }
+      if(m.sender_id!==uid()){await markMessagesRead([m]);await refreshUnreadCounts();}
+    })
+    .on("postgres_changes",{
+      event:"UPDATE",schema:"public",table:"messages",
+      filter:`conversation_id=eq.${conversationId}`
+    },async payload=>{
+      const idx=activeMessages.findIndex(x=>x.id===payload.new.id);
+      if(idx>=0){
+        await hydrateChatMedia([payload.new]);
+        activeMessages[idx]=payload.new;
+        const old=$("#msg_"+payload.new.id);if(old)old.outerHTML=bubbleHTML(payload.new,otherId);
+      }
+    })
+    .on("postgres_changes",{
+      event:"DELETE",schema:"public",table:"messages",
+      filter:`conversation_id=eq.${conversationId}`
+    },payload=>{
+      const id=payload.old?.id;
+      activeMessages=activeMessages.filter(x=>x.id!==id);
+      $("#msg_"+id)?.remove();
+    })
+    .on("broadcast",{event:"typing"},payload=>{
+      const p=payload.payload||{};
+      if(p.conversation_id===conversationId && p.user_id===otherId){
+        $("#typingLine")?.classList.toggle("hidden",!p.typing);
+      }
+    })
+    .on("broadcast",{event:"read"},async payload=>{
+      if(payload.payload?.user_id===otherId){
+        (payload.payload.message_ids||[]).forEach(x=>activeReadIds.add(x));
+        activeMessages.forEach(m=>{
+          if(payload.payload.message_ids?.includes(m.id)){
+            const old=$("#msg_"+m.id);if(old)old.outerHTML=bubbleHTML(m,otherId);
+          }
+        });
+      }
+    })
+    .on("presence",{event:"sync"},()=>{
+      const state=chatRealtimeChannel?.presenceState?.()||{};
+      const online=Object.values(state).flat().some(p=>p.user_id===otherId);
+      const status=$("#presenceStatus");if(status)status.textContent=online?"Online":"Offline";
+    })
+    .on("presence",{event:"join",},()=>{
+      const status=$("#presenceStatus");if(status)status.textContent="Online";
+    })
+    .on("presence",{event:"leave"},()=>{
+      const status=$("#presenceStatus");if(status)status.textContent="Offline";
+    })
+    .subscribe(async status=>{
+      if(status==="SUBSCRIBED"){
+        try{
+          await chatRealtimeChannel.track({user_id:uid(),online_at:new Date().toISOString()});
+          const state=chatRealtimeChannel.presenceState()||{};
+          const online=Object.values(state).flat().some(p=>p.user_id===otherId);
+          const st=$("#presenceStatus");if(st)st.textContent=online?"Online":"Offline";
+        }catch(e){}
+      }
+    });
+}
+async function sendChat(){
+  const input=$("#msgInput");if(!input||!activeConversationId)return;
+  const text=input.value.trim();if(!text)return;
+  input.value="";await sendTyping("");$("#typingLine")?.classList.add("hidden");
+  const {data,error}=await sb.from("messages").insert({
+    conversation_id:activeConversationId,
+    sender_id:uid(),
+    encrypted_content:text,
+    message_type:"text"
+  }).select("*").single();
+  if(error){toast(error.message);input.value=text;return}
+  // Local optimistic render; realtime listener avoids duplicates.
+  if(!activeMessages.some(x=>x.id===data.id)){
+    activeMessages.push(data);
+    const list=$("#messageList");if(list){list.insertAdjacentHTML("beforeend",bubbleHTML(data,activeOtherId));list.scrollTop=list.scrollHeight}
+  }
+}
+async function editMessage(id){
+  const m=activeMessages.find(x=>x.id===id);if(!m)return;
+  const next=prompt("Edit message:",m.encrypted_content||"");if(next===null)return;
+  const text=next.trim();if(!text)return;
+  const {data,error}=await sb.from("messages").update({encrypted_content:text,edited_at:new Date().toISOString()}).eq("id",id).eq("sender_id",uid()).select("*").single();
+  if(error)toast(error.message);else{
+    const idx=activeMessages.findIndex(x=>x.id===id);if(idx>=0)activeMessages[idx]=data;
+    const old=$("#msg_"+id);if(old)old.outerHTML=bubbleHTML(data,activeOtherId);
+  }
+}
+async function deleteMessage(id){
+  if(!confirm("Delete this message for everyone? This permanently removes it from both sides."))return;
+  const m=activeMessages.find(x=>x.id===id);
+  if(!m)return;
+  if(m.media_bucket==="chat-media" && m.media_path){
+    const {error:storageError}=await sb.storage.from("chat-media").remove([m.media_path]);
+    if(storageError){toast("Media cleanup failed: "+storageError.message);return;}
+  }
+  const {error}=await sb.from("messages").delete().eq("id",id).eq("sender_id",uid());
+  if(error){toast(error.message);return;}
+  activeMessages=activeMessages.filter(x=>x.id!==id);$("#msg_"+id)?.remove();
+}
+async function deleteEntireChat(){
+  if(!activeConversationId)return;
+  if(!confirm("Delete this entire chat for both sides? All messages in this private conversation will be permanently deleted."))return;
+  const conversationId=activeConversationId;
+  const otherId=activeOtherId;
+  const {error}=await sb.rpc("delete_private_conversation",{p_conversation_id:conversationId});
+  if(error){toast(error.message);return}
+  await closeChatRealtime();
+  activeConversationId=null;
+  activeOtherId=null;
+  activeMessages=[];
+  toast("Chat deleted for both sides");
+  await messagesPage($("#main"));
+}
+
+async function reportTarget(type,target){
+  const reason=prompt("Reason for report?");if(!reason)return;
+  const {error}=await sb.from("reports").insert({reporter_id:uid(),target_type:type,target_id:target,reason});if(error)toast(error.message);else toast("Report submitted")
+}
+async function deleteMyAccount(){
+  if(!confirm('Delete your NEXORA account permanently? Your profile, posts and uploaded media will be removed. This cannot be undone.'))return;
+  const typed=prompt('Type DELETE to confirm account deletion.');
+  if(typed!=='DELETE'){toast('Account deletion cancelled.');return;}
+  try{
+    const {data:{session},error:sessionError}=await sb.auth.getSession();
+    if(sessionError)throw sessionError;
+    if(!session?.access_token)throw new Error('Session expired. Please log in again.');
+    const r=await fetch(SUPABASE_URL+'/functions/v1/delete-account',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token},body:JSON.stringify({})});
+    let body={};try{body=await r.json()}catch(_){}
+    if(!r.ok)throw new Error(body?.error||`Account deletion failed (${r.status}).`);
+    await sb.auth.signOut();
+    alert('Your NEXORA account has been deleted.');
+    location.reload();
+  }catch(err){toast(err.message||'Account deletion failed');}
+}
+
+async function settingsPage(m){
+  const {data:s}=await sb.from("user_settings").select("*").eq("user_id",uid()).maybeSingle();
+  const v=s||{theme:"dark",message_privacy:"friends",profile_visibility:"public",allow_friend_requests:true,notifications_enabled:true};
+  m.innerHTML=`<div class="page-title"><h2>Settings</h2></div>
+  <div class="card"><h3>Appearance</h3><div class="field"><label>Theme</label><select id="setTheme" class="select"><option value="dark" ${v.theme==='dark'?'selected':''}>Dark theme</option><option value="light" ${v.theme==='light'?'selected':''}>Light theme</option></select></div><div class="small">Switch anytime between the deep navy dark palette and the clean blue-green light palette.</div><h3 style="margin-top:22px">Privacy</h3><div class="field"><label>Profile visibility</label><select id="setProfile" class="select"><option value="public" ${v.profile_visibility==="public"?"selected":""}>Public</option><option value="friends" ${v.profile_visibility==="friends"?"selected":""}>Friends</option></select></div><div class="field"><label>Who can message me?</label><select id="setMessages" class="select"><option value="friends" ${v.message_privacy==="friends"?"selected":""}>Friends</option><option value="everyone" ${v.message_privacy==="everyone"?"selected":""}>Everyone</option><option value="nobody" ${v.message_privacy==="nobody"?"selected":""}>Nobody</option></select></div><label><input type="checkbox" id="setFriendReq" ${v.allow_friend_requests?"checked":""}> Allow friend requests</label><br><br><label><input type="checkbox" id="setNotifications" ${v.notifications_enabled?"checked":""}> Notifications enabled</label><br><button class="primary" style="margin-top:14px" onclick="saveSettings()">Save settings</button></div>
+  <div class="card"><h3>Account</h3><div class="small">Username: @${esc(window.__profile?.username)}</div><div class="small" style="margin-top:5px">Your recovery email is not shown publicly.</div><button class="secondary" style="margin-top:13px" onclick="logout()">Logout</button><button class="danger" style="margin-top:13px;margin-left:7px" onclick="deleteMyAccount()">Delete my account</button><div class="small" style="margin-top:9px">Deleting your account permanently removes your profile, posts and NEXORA-owned uploads. This cannot be undone.</div></div>
+  <div class="card"><h3>Security</h3><div class="notice">RLS is enforced by Supabase for database authorization. E2EE messaging and media storage are scheduled for later phases.</div></div>`;
+}
+async function saveSettings(){
+  const row={user_id:uid(),profile_visibility:$("#setProfile").value,message_privacy:$("#setMessages").value,allow_friend_requests:$("#setFriendReq").checked,notifications_enabled:$("#setNotifications").checked,theme:$("#setTheme").value,updated_at:new Date().toISOString()};
+  const {error}=await sb.from("user_settings").upsert(row,{onConflict:"user_id"});if(error)toast(error.message);else{setTheme(row.theme);toast("Settings saved");renderShell()}
+}
+function openSearchModal(){
+  modal(`<div class="modal-head"><h2>Search NEXORA</h2><button class="secondary" onclick="closeModal()">×</button></div><input id="globalModalSearch" class="input" autofocus placeholder="Search usernames..." oninput="searchModal(this.value)"><div id="searchResults" class="list" style="margin-top:12px"></div>`);
+}
+async function searchModal(q){
+  q=q.trim();if(!q){$("#searchResults").innerHTML='<div class="empty">Type a username to search.</div>';return}
+  const {data}=await sb.from("profiles").select("*").ilike("username",`%${q}%`).neq("id",uid()).limit(10);
+  $("#searchResults").innerHTML=(data||[]).map(u=>`<div class="person">${avatar(u,"sm")}<div class="grow"><b>@${esc(u.username)}</b><div class="small">${esc(u.display_name||"")}</div></div><button class="secondary" onclick="closeModal();currentPage='profile';renderShell();setTimeout(()=>profilePage($('#main'),'${u.id}'),50)">View</button></div>`).join("")||'<div class="empty">No users found.</div>';
+}
+function globalSearch(v){if(v.trim().length>1)openSearchModal()}
+async function toggleTheme(){
+  const next=document.body.classList.contains('light')?'dark':'light';
+  setTheme(next);
+  const b=document.getElementById('themeToggle'); if(b)b.innerHTML=iconSvg(next==='light'?'sun':'moon');
+  try{
+    const {error}=await sb.from('user_settings').upsert({user_id:uid(),theme:next,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+    if(error)throw error;
+    toast(next==='light'?'Light theme enabled':'Dark theme enabled');
+  }catch(e){toast('Theme saved locally for this session');}
+}
+let popupTimers=[];
+function showLivePopup(kind,title,body,onClick){
+  const stack=$("#popupStack");if(!stack)return;
+  const el=document.createElement("div");el.className=`live-popup ${kind}`;el.innerHTML=`<div style="font-size:20px">${kind==="message"?"✉":"●"}</div><div class="grow"><div class="popup-title">${esc(title)}</div><div class="popup-body">${esc(body)}</div></div><button class="close" aria-label="Close">×</button>`;
+  el.querySelector(".close").onclick=()=>el.remove();
+  if(onClick)el.onclick=e=>{if(e.target.closest(".close"))return;onClick();el.remove()};
+  stack.prepend(el);
+  const timer=setTimeout(()=>el.remove(),6000);popupTimers.push(timer);
+}
+async function refreshUnreadCounts(){
+  try{
+    const [{count:notifCount},{count:msgCount}]=await Promise.all([
+      sb.from("notifications").select("id",{count:"exact",head:true}).eq("user_id",uid()).is("read_at",null).neq("type","new_message"),
+      sb.rpc("get_nexora_unread_message_count")
+    ]);
+    window.__unreadNotifications=notifCount||0;
+    window.__unreadMessages=Number(msgCount)||0;
+    document.querySelectorAll(".nav button,.bottom button").forEach(b=>{
+      const label=b.textContent||"";
+      const badge=b.querySelector(".badge");
+      if(label.includes("Notifications")){ if(window.__unreadNotifications){if(badge)badge.textContent=window.__unreadNotifications;else b.insertAdjacentHTML("beforeend",` <span class="badge">${window.__unreadNotifications}</span>`)}else if(badge)badge.remove(); }
+      if(label.includes("Messages")){ if(window.__unreadMessages){if(badge)badge.textContent=window.__unreadMessages;else b.insertAdjacentHTML("beforeend",` <span class="badge">${window.__unreadMessages}</span>`)}else if(badge)badge.remove(); }
+    });
+  }catch(e){console.warn("Unread count refresh failed",e)}
+}
+async function markNotificationsRead(){
+  const {error}=await sb.from("notifications").update({read_at:new Date().toISOString()}).eq("user_id",uid()).is("read_at",null).neq("type","new_message");
+  if(error)console.warn("Notification read update failed",error.message);
+  window.__unreadNotifications=0;await refreshUnreadCounts();
+}
+async function showIncomingNotification(n){
+  if(!n||n.user_id!==uid()||n.type==="new_message")return;
+  if(n.read_at)return;
+  const actor=window.__profileLookup[n.actor_id];
+  showLivePopup("notification",`@${actor?.username||"Someone"}`,n.message||"You have a new notification.",()=>setPage("notifications"));
+  window.__unreadNotifications=(window.__unreadNotifications||0)+1;await refreshUnreadCounts();
+}
+let realtimeChannel = null;
+let realtimeRetryTimer = null;
+let booting = false;
+let livePageRefreshTimer = null;
+
+function scheduleLivePageRefresh(){
+  if(currentPage!=="home" && currentPage!=="profile")return;
+  clearTimeout(livePageRefreshTimer);
+  livePageRefreshTimer=setTimeout(()=>{
+    pageRender().catch(e=>console.warn("Live page refresh failed:",e));
+  },180);
+}
+
+async function refreshLiveLikeCount(pid){
+  const el=document.querySelector(`[data-like-count="${pid}"]`);
+  if(!el)return;
+  const {count}=await sb.from("post_likes").select("post_id",{count:"exact",head:true}).eq("post_id",pid);
+  if(el)el.textContent=count??0;
+}
+
+async function loadRealtime(){
+  try{
+    if(realtimeChannel){
+      try{ await sb.removeChannel(realtimeChannel); }catch(e){}
+      realtimeChannel = null;
+    }
+
+    realtimeChannel = sb.channel("nexora-live-" + uid());
+
+    realtimeChannel
+      // New/edited/deleted posts update the visible feed/profile automatically.
+      .on("postgres_changes",{event:"*",schema:"public",table:"posts"},payload=>{
+        // Do not rebuild the whole page while the user is typing in a composer.
+        // A debounced refresh is still used when the composer is idle.
+        if(currentPage==="home"||currentPage==="profile") scheduleLivePageRefresh();
+      })
+      // post_media is added to realtime below in the optional SQL step. If it is
+      // not enabled yet, the post event still updates text-only posts live.
+      .on("postgres_changes",{event:"*",schema:"public",table:"post_media"},()=>{
+        scheduleLivePageRefresh();
+      })
+      // Likes update only the affected counter, so typing/comment boxes are not lost.
+      .on("postgres_changes",{event:"*",schema:"public",table:"post_likes"},payload=>{
+        const pid=payload.new?.post_id||payload.old?.post_id;
+        if(pid)refreshLiveLikeCount(pid).catch(()=>{});
+      })
+      // Comments refresh an already-open comment section without refreshing the page.
+      .on("postgres_changes",{event:"*",schema:"public",table:"comments"},payload=>{
+        const pid=payload.new?.post_id||payload.old?.post_id;
+        if(pid && document.getElementById("comments_"+pid)){
+          loadComments(pid).catch(()=>{});
+        }
+      })
+      // Friend requests update friend/notification screens and the sidebar badge.
+      .on("postgres_changes",{event:"*",schema:"public",table:"friend_requests"},async()=>{
+        await loadRelationshipState();
+        if(currentPage==="friends"||currentPage==="notifications") await pageRender();
+        else{
+          const badges=document.querySelectorAll(".badge");
+          badges.forEach(b=>b.textContent=window.__pending||0);
+        }
+      })
+      // Notifications are delivered live to the notifications page.
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},async payload=>{
+        const n=payload.new;
+        if(n?.user_id===uid() && n.type!=="new_message"){
+          await showIncomingNotification(n);
+          if(currentPage==="notifications")await pageRender();
+        }
+      })
+      .on("postgres_changes",{event:"UPDATE",schema:"public",table:"notifications"},async()=>{
+        await refreshUnreadCounts();
+      })
+      // Keep the chat list fresh when messages/conversations change.
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},async payload=>{
+        const msg=payload.new;
+        if(msg?.sender_id!==uid()){
+          let actor=window.__profileLookup[msg.sender_id];
+          if(!actor){const r=await sb.from("profiles").select("username,display_name").eq("id",msg.sender_id).maybeSingle();actor=r.data||{};}
+          if(!(currentPage==="messages" && activeConversationId===msg.conversation_id)){
+            showLivePopup("message",`New message from @${actor?.username||"user"}`,msg.encrypted_content||"New message",async()=>{
+              const r=await sb.from("conversation_members").select("user_id").eq("conversation_id",msg.conversation_id).neq("user_id",uid()).maybeSingle();
+              if(r.data?.user_id){setPage("messages");setTimeout(()=>openChat(r.data.user_id),80)}
+            });
+          }
+          await refreshUnreadCounts();
+        }
+        if(currentPage==="messages" && !activeConversationId){pageRender().catch(()=>{});}
+      })
+      .on("postgres_changes",{event:"*",schema:"public",table:"conversation_members"},payload=>{
+        if(currentPage==="messages"){
+          pageRender().catch(()=>{});
+        }
+      })
+      .subscribe((status)=>{
+        if(status==="SUBSCRIBED") {
+          console.info("NEXORA Realtime connected");
+          clearTimeout(realtimeRetryTimer);
+        }
+        if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED"){
+          console.warn("NEXORA Realtime unavailable:",status);
+          clearTimeout(realtimeRetryTimer);
+          realtimeRetryTimer=setTimeout(()=>loadRealtime(),2500);
+        }
+      });
+  }catch(e){
+    console.warn("Realtime setup skipped:",e);
+    realtimeChannel = null;
+  }
+}
+async function boot(){
+  if(booting) return;
+  booting = true;
+  try{
+    const s=await session();
+    if(!s){authUI();return}
+    window.__uid=s.user.id;
+    try{
+      window.__profile=await profile();
+      await loadRelationshipState();
+      await loadRealtime();
+      await refreshUnreadCounts();
+      await loadThemePreference();
+      renderShell();
+    }catch(err){
+      document.getElementById("root").innerHTML=`<div class="wrap"><div class="card auth-card"><div class="logo">${brandLockup()}</div><h2>Setup error</h2><p class="muted">${esc(err.message)}</p><button class="primary" onclick="logout()">Back to login</button></div></div>`;
+    }
+  }finally{
+    booting = false;
+  }
+}
+boot();
+</script>
+</body>
+</html>
